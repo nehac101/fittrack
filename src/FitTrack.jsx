@@ -10,6 +10,17 @@ async function saveWorkouts(ws) {
   try { await window.storage.set(STORAGE_KEY, JSON.stringify(ws)); } catch {}
 }
 
+// Saved workout templates for "quick add" — workouts you do regularly.
+// Each template: { id, name, type, exercises: [{ exerciseId, sets, reps, weight }] }
+const TEMPLATES_KEY = "fittrack_templates_v1";
+async function loadTemplates() {
+  try { const r = await window.storage.get(TEMPLATES_KEY); return r ? JSON.parse(r.value) : []; }
+  catch { return []; }
+}
+async function saveTemplates(ts) {
+  try { await window.storage.set(TEMPLATES_KEY, JSON.stringify(ts)); } catch {}
+}
+
 // ── Exercise database ────────────────────────────────────────────────────────
 // Each exercise: { id, name, primaryMuscles: [svgRegion...], secondaryMuscles: [svgRegion...] }
 // SVG regions: back_upper, back_lower, lats, shoulder_l/r, chest_l/r,
@@ -396,11 +407,13 @@ function ExerciseRow({ ex, category, onChange, onRemove, index }) {
 }
 
 // ── Log form ──────────────────────────────────────────────────────────────────
-function LogForm({ onSave, onCancel }) {
+function LogForm({ onSave, onCancel, onSaveTemplate }) {
   const [category, setCategory] = useState("back");
   const [date, setDate] = useState(today());
   const [notes, setNotes] = useState("");
   const [exercises, setExercises] = useState([{ id: Date.now(), exerciseId: "", sets: "", reps: "", weight: "" }]);
+  const [asTemplate, setAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
 
   function addExercise() {
     setExercises(ex => [...ex, { id: Date.now() + Math.random(), exerciseId: "", sets: "", reps: "", weight: "" }]);
@@ -415,6 +428,13 @@ function LogForm({ onSave, onCancel }) {
   function handleSave() {
     const filled = exercises.filter(e => e.exerciseId);
     if (!filled.length) return;
+    if (asTemplate && templateName.trim()) {
+      onSaveTemplate({
+        name: templateName.trim(),
+        type: category,
+        exercises: filled.map(({ exerciseId, sets, reps, weight }) => ({ exerciseId, sets, reps, weight })),
+      });
+    }
     onSave({ type: category, date, notes, exercises: filled });
   }
 
@@ -476,6 +496,26 @@ function LogForm({ onSave, onCancel }) {
         />
       </div>
 
+      {/* Save as quick-add template */}
+      <div style={{ marginBottom: "1rem" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--color-text-secondary)", cursor: "pointer" }}>
+          <input type="checkbox" checked={asTemplate} onChange={e => setAsTemplate(e.target.checked)} />
+          Save as quick-add (a workout you do regularly)
+        </label>
+        {asTemplate && (
+          <input
+            placeholder="Template name — e.g. Push Day A"
+            value={templateName}
+            onChange={e => setTemplateName(e.target.value)}
+            style={{
+              width: "100%", boxSizing: "border-box", marginTop: 8, fontSize: 13, padding: "6px 10px",
+              border: "0.5px solid var(--color-border-secondary)", borderRadius: "var(--border-radius-md)",
+              background: "var(--color-background-secondary)", color: "var(--color-text-primary)",
+            }}
+          />
+        )}
+      </div>
+
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={handleSave} disabled={!canSave} style={{ flex: 1, fontWeight: 500, opacity: canSave ? 1 : 0.4 }}>Save workout</button>
         <button onClick={onCancel} style={{ flex: 1 }}>Cancel</button>
@@ -485,11 +525,24 @@ function LogForm({ onSave, onCancel }) {
 }
 
 // ── Workout card in history ───────────────────────────────────────────────────
-function WorkoutCard({ w, onDelete }) {
+function WorkoutCard({ w, onDelete, onSaveTemplate }) {
   const [confirm, setConfirm] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [savingTpl, setSavingTpl] = useState(false);
+  const [tplName, setTplName] = useState("");
   const color = TYPE_COLORS[w.type] || "#888";
   const totalSets = (w.exercises || []).reduce((a, e) => a + (Number(e.sets) || 0), 0);
+
+  function saveTemplate() {
+    if (!tplName.trim()) return;
+    onSaveTemplate({
+      name: tplName.trim(),
+      type: w.type,
+      exercises: (w.exercises || []).map(({ exerciseId, sets, reps, weight }) => ({ exerciseId, sets, reps, weight })),
+    });
+    setSavingTpl(false);
+    setTplName("");
+  }
 
   return (
     <div style={{
@@ -531,6 +584,30 @@ function WorkoutCard({ w, onDelete }) {
             );
           })}
           {w.notes && <p style={{ fontSize: 12, color: "var(--color-text-tertiary)", margin: "4px 0 0", fontStyle: "italic" }}>{w.notes}</p>}
+          {onSaveTemplate && (
+            savingTpl ? (
+              <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                <input
+                  autoFocus
+                  placeholder="Quick-add name…"
+                  value={tplName}
+                  onChange={e => setTplName(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") saveTemplate(); if (e.key === "Escape") { setSavingTpl(false); setTplName(""); } }}
+                  style={{
+                    flex: 1, fontSize: 12, padding: "4px 8px",
+                    border: "0.5px solid var(--color-border-secondary)", borderRadius: "var(--border-radius-md)",
+                    background: "var(--color-background-secondary)", color: "var(--color-text-primary)",
+                  }}
+                />
+                <button onClick={saveTemplate} style={{ fontSize: 12, padding: "4px 10px" }}>Save</button>
+                <button onClick={() => { setSavingTpl(false); setTplName(""); }} style={{ fontSize: 12, padding: "4px 8px" }}>×</button>
+              </div>
+            ) : (
+              <button onClick={() => setSavingTpl(true)} style={{ alignSelf: "flex-start", marginTop: 6, fontSize: 12, color: "var(--color-text-secondary)" }}>
+                <i className="ti ti-bookmark-plus" aria-hidden="true" style={{ marginRight: 4 }}/> Save as quick-add
+              </button>
+            )
+          )}
         </div>
       )}
     </div>
@@ -617,14 +694,167 @@ function CoverageBar({ workouts }) {
   );
 }
 
+// ── Quick add — log a saved workout in one tap ────────────────────────────────
+function QuickAdd({ templates, onQuickAdd, onDelete }) {
+  if (!templates.length) return null;
+  return (
+    <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "1rem 1.25rem" }}>
+      <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-tertiary)", margin: "0 0 12px", letterSpacing: 0.5, textTransform: "uppercase" }}>Quick add</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {templates.map(t => {
+          const color = TYPE_COLORS[t.type] || "#888";
+          return (
+            <div key={t.id} style={{
+              display: "flex", alignItems: "center",
+              border: "0.5px solid var(--color-border-secondary)",
+              borderRadius: "var(--border-radius-md)",
+              background: "var(--color-background-secondary)", overflow: "hidden",
+            }}>
+              <button
+                onClick={() => onQuickAdd(t)}
+                title={`Log "${t.name}" for today`}
+                style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", borderRadius: 0, cursor: "pointer", padding: "8px 12px" }}
+              >
+                <span style={{
+                  fontSize: 9, fontWeight: 600, letterSpacing: 0.5, padding: "2px 6px", borderRadius: 4,
+                  background: color + "22", color, border: `0.5px solid ${color}55`, textTransform: "uppercase",
+                }}>{MUSCLE_GROUPS[t.type] || t.type}</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: "var(--color-text-primary)" }}>{t.name}</span>
+                <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
+                  {t.exercises.length} ex
+                </span>
+                <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: 14, color }}/>
+              </button>
+              <button
+                onClick={() => onDelete(t.id)}
+                title="Remove quick-add"
+                style={{ padding: "8px 10px", opacity: 0.4, borderRadius: 0, borderLeft: "0.5px solid var(--color-border-tertiary)" }}
+              >
+                <i className="ti ti-x" aria-hidden="true" style={{ fontSize: 12 }}/>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Exercise finder — describe a movement, AI identifies it ───────────────────
+function ExerciseFinder() {
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+
+  // Flat catalog sent to the model so it can map to a known exercise id.
+  const catalog = useMemo(
+    () => Object.entries(EXERCISES).flatMap(([category, list]) =>
+      list.map(e => ({ id: e.id, name: e.name, category }))
+    ),
+    []
+  );
+
+  async function identify() {
+    if (!query.trim() || loading) return;
+    setLoading(true); setError(""); setResult(null);
+    try {
+      const res = await fetch("/api/identify-exercise", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query, exercises: catalog }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+      setResult(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // If the model matched a catalog exercise, pull its muscle tags to display.
+  const matchedDef = result?.found
+    ? Object.values(EXERCISES).flat().find(e => e.id === result.exerciseId)
+    : null;
+  const muscleTags = matchedDef
+    ? [...new Set([...matchedDef.primary, ...matchedDef.secondary].map(m => m.replace(/_[lr]$/, "").replace(/_/g, " ")))]
+    : [];
+  const color = result ? (TYPE_COLORS[result.category] || "#888") : "#888";
+
+  return (
+    <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "1.25rem" }}>
+      <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-tertiary)", margin: "0 0 4px", letterSpacing: 0.5, textTransform: "uppercase" }}>Find an exercise</p>
+      <p style={{ fontSize: 13, color: "var(--color-text-secondary)", margin: "0 0 12px" }}>
+        Don't know what it's called? Describe the movement and AI will identify it.
+      </p>
+
+      <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", border: "0.5px solid var(--color-border-secondary)", borderRadius: "var(--border-radius-md)", background: "var(--color-background-secondary)" }}>
+          <i className="ti ti-search" aria-hidden="true" style={{ fontSize: 14, color: "var(--color-text-tertiary)", flexShrink: 0 }}/>
+          <input
+            placeholder="e.g. lying down, curl heels to butt against a pad"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") identify(); }}
+            style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 13, color: "var(--color-text-primary)" }}
+          />
+        </div>
+        <button onClick={identify} disabled={!query.trim() || loading} style={{ fontWeight: 500, opacity: !query.trim() || loading ? 0.4 : 1 }}>
+          {loading ? "Identifying…" : "Identify"}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ marginTop: 12, fontSize: 13, color: "var(--color-text-danger)" }}>
+          <i className="ti ti-alert-triangle" aria-hidden="true" style={{ marginRight: 6 }}/>{error}
+        </div>
+      )}
+
+      {result && (
+        <div style={{ marginTop: 14, padding: "12px 14px", border: `0.5px solid ${color}55`, borderRadius: "var(--border-radius-md)", background: color + "12" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: "var(--color-text-primary)" }}>{result.exerciseName}</span>
+            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.5, padding: "2px 7px", borderRadius: 4, background: color + "22", color, border: `0.5px solid ${color}55`, textTransform: "uppercase" }}>
+              {MUSCLE_GROUPS[result.category] || result.category}
+            </span>
+            <span style={{ fontSize: 11, color: "var(--color-text-tertiary)", marginLeft: "auto" }}>
+              {result.found ? "in your catalog" : "not in catalog"} · {result.confidence} confidence
+            </span>
+          </div>
+          {muscleTags.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+              {muscleTags.map(m => (
+                <span key={m} style={{ fontSize: 10, padding: "1px 6px", borderRadius: 3, background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-secondary)", color: "var(--color-text-secondary)" }}>{m}</span>
+              ))}
+            </div>
+          )}
+          {result.note && <p style={{ fontSize: 12, color: "var(--color-text-secondary)", margin: "8px 0 0" }}>{result.note}</p>}
+          {!result.found && (
+            <p style={{ fontSize: 12, color: "var(--color-text-tertiary)", margin: "8px 0 0", fontStyle: "italic" }}>
+              This one isn't in the catalog yet — log it under {MUSCLE_GROUPS[result.category] || result.category} with the closest match.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function FitTrack() {
   const [workouts, setWorkouts] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [tab, setTab] = useState("dashboard");
 
-  useEffect(() => { loadWorkouts().then(ws => { setWorkouts(ws); setLoaded(true); }); }, []);
+  useEffect(() => {
+    Promise.all([loadWorkouts(), loadTemplates()]).then(([ws, ts]) => {
+      setWorkouts(ws); setTemplates(ts); setLoaded(true);
+    });
+  }, []);
 
   const heat = useMemo(() => getRegionHeat(workouts), [workouts]);
   const sorted = useMemo(() => [...workouts].sort((a, b) => b.date.localeCompare(a.date)), [workouts]);
@@ -639,6 +869,32 @@ export default function FitTrack() {
 
   async function handleDelete(id) {
     const updated = workouts.filter(w => w.id !== id);
+    setWorkouts(updated);
+    await saveWorkouts(updated);
+  }
+
+  async function handleSaveTemplate(tpl) {
+    const t = { ...tpl, id: Date.now().toString() };
+    const updated = [...templates, t];
+    setTemplates(updated);
+    await saveTemplates(updated);
+  }
+
+  async function handleDeleteTemplate(id) {
+    const updated = templates.filter(t => t.id !== id);
+    setTemplates(updated);
+    await saveTemplates(updated);
+  }
+
+  async function handleQuickAdd(tpl) {
+    const w = {
+      id: Date.now().toString(),
+      type: tpl.type,
+      date: today(),
+      notes: "",
+      exercises: tpl.exercises.map(e => ({ ...e })),
+    };
+    const updated = [w, ...workouts];
     setWorkouts(updated);
     await saveWorkouts(updated);
   }
@@ -670,11 +926,11 @@ export default function FitTrack() {
         </button>
       </div>
 
-      {showForm && <div style={{ marginBottom: "1.25rem" }}><LogForm onSave={handleSave} onCancel={() => setShowForm(false)}/></div>}
+      {showForm && <div style={{ marginBottom: "1.25rem" }}><LogForm onSave={handleSave} onCancel={() => setShowForm(false)} onSaveTemplate={handleSaveTemplate}/></div>}
 
       {/* Tabs */}
       <div style={{ display: "flex", marginBottom: "1rem", borderBottom: "0.5px solid var(--color-border-tertiary)" }}>
-        {[["dashboard","Dashboard"],["history","History"]].map(([id, label]) => (
+        {[["dashboard","Dashboard"],["find","Find"],["history","History"]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} style={{
             background: "none", border: "none",
             borderBottom: tab === id ? "2px solid var(--color-text-primary)" : "2px solid transparent",
@@ -687,6 +943,8 @@ export default function FitTrack() {
 
       {tab === "dashboard" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <QuickAdd templates={templates} onQuickAdd={handleQuickAdd} onDelete={handleDeleteTemplate}/>
+
           {/* Heatmap */}
           <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "1rem 1.25rem" }}>
             <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-tertiary)", margin: "0 0 12px", letterSpacing: 0.5, textTransform: "uppercase" }}>Muscle activation · last 7 days</p>
@@ -709,7 +967,7 @@ export default function FitTrack() {
           {sorted.length > 0 && (
             <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", overflow: "hidden" }}>
               <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-tertiary)", margin: 0, padding: "12px 14px 10px", letterSpacing: 0.5, textTransform: "uppercase", borderBottom: "0.5px solid var(--color-border-tertiary)" }}>Recent</p>
-              {sorted.slice(0, 5).map(w => <WorkoutCard key={w.id} w={w} onDelete={handleDelete}/>)}
+              {sorted.slice(0, 5).map(w => <WorkoutCard key={w.id} w={w} onDelete={handleDelete} onSaveTemplate={handleSaveTemplate}/>)}
               {sorted.length > 5 && (
                 <button onClick={() => setTab("history")} style={{ width: "100%", fontSize: 12, padding: "10px", borderRadius: 0, border: "none", borderTop: "0.5px solid var(--color-border-tertiary)", background: "none", color: "var(--color-text-secondary)", cursor: "pointer" }}>
                   View all {sorted.length} workouts ↗
@@ -727,11 +985,13 @@ export default function FitTrack() {
         </div>
       )}
 
+      {tab === "find" && <ExerciseFinder/>}
+
       {tab === "history" && (
         <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", overflow: "hidden" }}>
           {sorted.length === 0
             ? <p style={{ textAlign: "center", padding: "2rem", color: "var(--color-text-tertiary)", fontSize: 14 }}>No workouts logged yet.</p>
-            : sorted.map(w => <WorkoutCard key={w.id} w={w} onDelete={handleDelete}/>)
+            : sorted.map(w => <WorkoutCard key={w.id} w={w} onDelete={handleDelete} onSaveTemplate={handleSaveTemplate}/>)
           }
         </div>
       )}
