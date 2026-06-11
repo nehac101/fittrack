@@ -1,45 +1,109 @@
+/* Rounded, chunky display font */
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&display=swap");
 /* Tabler icon webfont (provides the `ti ti-*` classes) */
 @import "@tabler/icons-webfont/dist/tabler-icons.css";
 
 /* ── Design tokens ──────────────────────────────────────────────────────────
-   These approximate the theme variables the Claude artifact runtime injects.
-   Tweak freely. A dark theme is provided below via prefers-color-scheme. */
+   Arcade game-UI theme: violet + hot-magenta, glossy candy buttons,
+   thick outlined panels with chunky drop shadows. */
 :root {
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: "Quicksand", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Baloo 2", var(--font-sans);
 
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
+  /* bubbly = big radii */
+  --border-radius-md: 14px;
+  --border-radius-lg: 20px;
 
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f4f4f5;
+  --color-background-primary: #ffffff;     /* panels */
+  --color-background-secondary: #f1ebff;   /* soft lilac sub-fills */
 
-  --color-border-secondary: #d4d4d8;
-  --color-border-tertiary: #e4e4e7;
+  --color-border-secondary: #c9b8ff;
+  --color-border-tertiary: #ded2ff;
 
-  --color-text-primary: #18181b;
-  --color-text-secondary: #52525b;
-  --color-text-tertiary: #a1a1aa;
-  --color-text-danger: #dc2626;
+  --color-text-primary: #2c2150;           /* deep indigo */
+  --color-text-secondary: #6b5b9a;
+  --color-text-tertiary: #a99bd0;
+  --color-text-danger: #e0407a;
+
+  /* hot accent family */
+  --color-accent: #ff2d86;          /* hot magenta */
+  --color-accent-strong: #c01865;   /* dark edge / hover */
+  --color-accent-soft: #ffe3ee;
+  --color-accent-tint: #ffd1e3;
+  --color-violet: #6b4fd0;
+
+  /* panel outline + chunky shadow */
+  --color-panel-border: #5b3ec7;
+  --panel-shadow: 0 5px 0 rgba(91, 62, 199, 0.22), 0 10px 18px rgba(44, 33, 80, 0.16);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background-primary: #18181b;
-    --color-background-secondary: #27272a;
+    --color-background-primary: #2a2150;
+    --color-background-secondary: #221a42;
 
-    --color-border-secondary: #3f3f46;
-    --color-border-tertiary: #3f3f46;
+    --color-border-secondary: #4a3a86;
+    --color-border-tertiary: #3a2d6e;
 
-    --color-text-primary: #fafafa;
-    --color-text-secondary: #d4d4d8;
-    --color-text-tertiary: #71717a;
-    --color-text-danger: #f87171;
+    --color-text-primary: #f3eeff;
+    --color-text-secondary: #c4b6ee;
+    --color-text-tertiary: #8a7cc0;
+    --color-text-danger: #ff7eab;
+
+    --color-accent: #ff4d9d;
+    --color-accent-strong: #ff80bb;
+    --color-violet: #b9a3ff;
+
+    --color-panel-border: #7c63d8;
+    --panel-shadow: 0 5px 0 rgba(0, 0, 0, 0.35), 0 10px 18px rgba(0, 0, 0, 0.4);
   }
 }
 
 html, body {
   margin: 0;
-  background: var(--color-background-secondary);
+  min-height: 100vh;
+  background: linear-gradient(160deg, #efe8ff 0%, #fce9ff 100%);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
 }
+@media (prefers-color-scheme: dark) {
+  html, body { background: linear-gradient(160deg, #1c1538 0%, #2a1840 100%); }
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────────
+   Glossy candy pills with a thick outline and a chunky bottom edge that
+   "pops" down on press. Components that set their own background inline
+   (tabs, chips) override the gradient automatically. */
+button {
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-violet);
+  background: linear-gradient(180deg, #ffffff 0%, #efe7ff 100%);
+  border: 2px solid #c3b0ff;
+  border-radius: 999px;
+  padding: 9px 17px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #c9b8ff;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease, opacity 0.15s ease;
+}
+button:hover { filter: brightness(1.04); }
+button:active { transform: translateY(4px); box-shadow: 0 0 0 #c9b8ff; }
+button:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: 0 4px 0 #c9b8ff; filter: none; }
+
+/* Primary call-to-action: juicy magenta gradient, glossy, pops hard. */
+.btn-primary {
+  color: #fff;
+  background: linear-gradient(180deg, #ff6aa9 0%, #ff2d86 100%);
+  border: 2px solid var(--color-accent-strong);
+  box-shadow: 0 5px 0 var(--color-accent-strong), 0 8px 14px rgba(255, 45, 134, 0.4);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
+  letter-spacing: 0.3px;
+}
+.btn-primary:hover { background: linear-gradient(180deg, #ff7ab4 0%, #ff3d90 100%); }
+.btn-primary:active { transform: translateY(5px); box-shadow: 0 0 0 var(--color-accent-strong), 0 3px 8px rgba(255, 45, 134, 0.4); }
+
+/* Headings use the chunky display face */
+h1 { font-family: var(--font-display); }
+
+/* Inputs share the bubbly rounding */
+input, select, textarea { border-radius: var(--border-radius-md); }
