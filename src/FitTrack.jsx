@@ -181,11 +181,11 @@ function getRegionHeat(workouts) {
 
 function heatColor(v) {
   if (v <= 0)   return "var(--muscle-rest)";
-  if (v < 0.2)  return "#f9ddd0";
-  if (v < 0.4)  return "#f5b48a";
-  if (v < 0.6)  return "#f08040";
-  if (v < 0.8)  return "#e05a1a";
-  return "#c23000";
+  if (v < 0.2)  return "#fde0ec";
+  if (v < 0.4)  return "#f9b5d2";
+  if (v < 0.6)  return "#f582b3";
+  if (v < 0.8)  return "#ec4f93";
+  return "#d61f6f";
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -212,58 +212,94 @@ const TYPE_COLORS = {
 function BodySVG({ heat }) {
   const r = id => ({ fill: heatColor(heat[id] || 0), transition: "fill 0.5s ease" });
   return (
-    <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
+    <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
       {[
         { label: "FRONT", side: "front" },
         { label: "BACK",  side: "back"  },
       ].map(({ label, side }) => (
         <div key={side} style={{ textAlign: "center" }}>
-          <p style={{ fontSize: 10, color: "var(--color-text-tertiary)", margin: "0 0 4px", letterSpacing: 1 }}>{label}</p>
-          <svg width="105" viewBox="0 0 110 280" xmlns="http://www.w3.org/2000/svg">
-            <style>{`.mb{stroke:var(--muscle-stroke);stroke-width:0.8}.bl{fill:none;stroke:var(--body-line);stroke-width:0.8}`}</style>
-            <ellipse cx="55" cy="18" rx="14" ry="17" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
-            <rect x="50" y="34" width="10" height="10" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
-            <ellipse cx="24" cy="52" rx="12" ry="8" className="mb" style={r("shoulder_l")}/>
-            <ellipse cx="86" cy="52" rx="12" ry="8" className="mb" style={r("shoulder_r")}/>
+          <p style={{ fontSize: 11, color: "var(--color-text-tertiary)", margin: "0 0 4px", letterSpacing: 1.5, fontWeight: 600 }}>{label}</p>
+          <svg width="152" viewBox="0 0 120 300" xmlns="http://www.w3.org/2000/svg">
+            <style>{`.mb{stroke:var(--muscle-stroke);stroke-width:0.7}.sk{fill:var(--skin);stroke:var(--body-line);stroke-width:0.8}.bl{fill:none;stroke:var(--body-line);stroke-width:0.7;stroke-linecap:round;opacity:0.6}`}</style>
+
+            {/* ── Skin silhouette (drawn first; muscle gaps reveal it) ── */}
+            <path className="sk" d="M53 46 L67 46 L66 60 Q60 64 54 60 Z"/>
+            <path className="sk" d="M44 58 Q60 52 76 58 Q81 72 79 90 Q85 116 77 140 Q73 151 79 160 Q81 168 77 178 Q60 184 43 178 Q39 168 41 160 Q47 151 43 140 Q35 116 41 90 Q39 72 44 58 Z"/>
+            <path className="sk" d="M45 60 Q31 62 28 80 Q23 104 23 126 Q23 144 27 154 L25 164 Q27 172 33 170 Q39 169 39 161 L41 152 Q43 128 42 104 Q42 82 47 64 Z"/>
+            <path className="sk" d="M75 60 Q89 62 92 80 Q97 104 97 126 Q97 144 93 154 L95 164 Q93 172 87 170 Q81 169 81 161 L79 152 Q77 128 78 104 Q78 82 73 64 Z"/>
+            <ellipse className="sk" cx="30" cy="170" rx="6" ry="7"/>
+            <ellipse className="sk" cx="90" cy="170" rx="6" ry="7"/>
+            <path className="sk" d="M44 172 Q34 204 38 238 Q35 260 40 282 L39 290 Q41 297 49 296 Q55 295 55 287 L55 282 Q58 258 55 238 Q58 204 56 172 Q50 176 44 172 Z"/>
+            <path className="sk" d="M76 172 Q86 204 82 238 Q85 260 80 282 L81 290 Q79 297 71 296 Q65 295 65 287 L65 282 Q62 258 65 238 Q62 204 64 172 Q70 176 76 172 Z"/>
+            <ellipse className="sk" cx="46" cy="295" rx="8" ry="4"/>
+            <ellipse className="sk" cx="74" cy="295" rx="8" ry="4"/>
+
+            {/* ── Deltoids (both views) ── */}
+            <path className="mb" style={r("shoulder_l")} d="M45 58 Q32 60 30 74 Q31 84 41 84 Q47 82 47 70 Q47 60 45 58 Z"/>
+            <path className="mb" style={r("shoulder_r")} d="M75 58 Q88 60 90 74 Q89 84 79 84 Q73 82 73 70 Q73 60 75 58 Z"/>
+
             {side === "front" ? <>
-              <path d="M36 44 Q55 40 55 44 L55 66 Q55 70 36 66 Z" className="mb" style={r("chest_l")}/>
-              <path d="M74 44 Q55 40 55 44 L55 66 Q55 70 74 66 Z" className="mb" style={r("chest_r")}/>
-              <rect x="42" y="68" width="13" height="14" rx="3" className="mb" style={r("abs_upper")}/>
-              <rect x="56" y="68" width="13" height="14" rx="3" className="mb" style={r("abs_upper")}/>
-              <rect x="42" y="84" width="13" height="14" rx="3" className="mb" style={r("abs_lower")}/>
-              <rect x="56" y="84" width="13" height="14" rx="3" className="mb" style={r("abs_lower")}/>
-              <path d="M36 68 Q38 82 36 98 Q30 90 30 80 Z" className="mb" style={r("obliques_l")}/>
-              <path d="M74 68 Q72 82 74 98 Q80 90 80 80 Z" className="mb" style={r("obliques_r")}/>
-              <path d="M18 52 Q12 65 14 80 Q20 82 26 80 Q28 66 24 52 Z" className="mb" style={r("biceps_l")}/>
-              <path d="M92 52 Q98 65 96 80 Q90 82 84 80 Q82 66 86 52 Z" className="mb" style={r("biceps_r")}/>
-              <path d="M36 112 Q30 140 32 168 Q42 172 48 168 Q50 140 46 112 Z" className="mb" style={r("quads_l")}/>
-              <path d="M74 112 Q80 140 78 168 Q68 172 62 168 Q60 140 64 112 Z" className="mb" style={r("quads_r")}/>
-              <path d="M32 178 Q28 202 30 222 Q38 226 46 222 Q48 202 48 178 Z" className="mb" style={r("calves_l")}/>
-              <path d="M78 178 Q82 202 80 222 Q72 226 64 222 Q62 202 62 178 Z" className="mb" style={r("calves_r")}/>
+              {/* Pectorals */}
+              <path className="mb" style={r("chest_l")} d="M46 61 Q59 57 59 65 L59 89 Q57 95 47 92 Q43 82 45 71 Q45 64 46 61 Z"/>
+              <path className="mb" style={r("chest_r")} d="M74 61 Q61 57 61 65 L61 89 Q63 95 73 92 Q77 82 75 71 Q75 64 74 61 Z"/>
+              {/* Obliques */}
+              <path className="mb" style={r("obliques_l")} d="M45 92 Q41 116 46 142 Q50 148 52 142 L52 96 Q48 92 45 92 Z"/>
+              <path className="mb" style={r("obliques_r")} d="M75 92 Q79 116 74 142 Q70 148 68 142 L68 96 Q72 92 75 92 Z"/>
+              {/* Rectus abdominis (upper / lower) */}
+              <path className="mb" style={r("abs_upper")} d="M52 95 Q51 108 52 121 L59 121 L59 95 Q55 93 52 95 Z"/>
+              <path className="mb" style={r("abs_upper")} d="M68 95 Q69 108 68 121 L61 121 L61 95 Q65 93 68 95 Z"/>
+              <path className="mb" style={r("abs_lower")} d="M52 122 Q51 138 57 150 Q59 152 59 149 L59 122 Z"/>
+              <path className="mb" style={r("abs_lower")} d="M68 122 Q69 138 63 150 Q61 152 61 149 L61 122 Z"/>
+              {/* Biceps */}
+              <path className="mb" style={r("biceps_l")} d="M31 80 Q25 96 28 114 Q34 118 40 114 Q42 96 38 80 Q35 78 31 80 Z"/>
+              <path className="mb" style={r("biceps_r")} d="M89 80 Q95 96 92 114 Q86 118 80 114 Q78 96 82 80 Q85 78 89 80 Z"/>
+              {/* Quadriceps */}
+              <path className="mb" style={r("quads_l")} d="M44 173 Q35 205 39 238 Q46 244 54 238 Q58 205 56 173 Q50 177 44 173 Z"/>
+              <path className="mb" style={r("quads_r")} d="M76 173 Q85 205 81 238 Q74 244 66 238 Q62 205 64 173 Q70 177 76 173 Z"/>
+              {/* Tibialis / front lower leg */}
+              <path className="mb" style={r("calves_l")} d="M41 244 Q37 264 41 283 Q47 287 51 283 Q53 264 51 244 Q46 247 41 244 Z"/>
+              <path className="mb" style={r("calves_r")} d="M79 244 Q83 264 79 283 Q73 287 69 283 Q67 264 69 244 Q74 247 79 244 Z"/>
+              {/* Definition lines */}
+              <path className="bl" d="M60 95 L60 150"/>
+              <path className="bl" d="M52 108 L68 108"/>
+              <path className="bl" d="M52 122 L68 122"/>
+              <path className="bl" d="M50 200 Q52 218 50 236"/>
+              <path className="bl" d="M70 200 Q68 218 70 236"/>
             </> : <>
-              <path d="M36 44 Q55 38 74 44 L68 60 Q55 56 42 60 Z" className="mb" style={r("back_upper")}/>
-              <path d="M36 55 Q26 75 28 95 Q38 100 42 95 Q44 75 40 58 Z" className="mb" style={r("lats")}/>
-              <path d="M74 55 Q84 75 82 95 Q72 100 68 95 Q66 75 70 58 Z" className="mb" style={r("lats")}/>
-              <rect x="42" y="60" width="26" height="22" rx="3" className="mb" style={r("back_upper")}/>
-              <rect x="40" y="84" width="30" height="20" rx="3" className="mb" style={r("back_lower")}/>
-              <path d="M18 52 Q12 65 14 80 Q20 82 26 80 Q28 66 24 52 Z" className="mb" style={r("triceps_l")}/>
-              <path d="M92 52 Q98 65 96 80 Q90 82 84 80 Q82 66 86 52 Z" className="mb" style={r("triceps_r")}/>
-              <path d="M36 112 Q32 128 36 140 Q46 144 55 140 Q55 128 46 112 Z" className="mb" style={r("glutes_l")}/>
-              <path d="M74 112 Q78 128 74 140 Q64 144 55 140 Q55 128 64 112 Z" className="mb" style={r("glutes_r")}/>
-              <path d="M36 142 Q30 162 32 180 Q42 184 48 180 Q50 162 48 142 Z" className="mb" style={r("hamstrings_l")}/>
-              <path d="M74 142 Q80 162 78 180 Q68 184 62 180 Q60 162 62 142 Z" className="mb" style={r("hamstrings_r")}/>
-              <path d="M32 188 Q28 208 30 226 Q38 230 46 226 Q48 208 48 188 Z" className="mb" style={r("calves_l")}/>
-              <path d="M78 188 Q82 208 80 226 Q72 230 64 226 Q62 208 62 188 Z" className="mb" style={r("calves_r")}/>
+              {/* Trapezius + rhomboids (upper back) */}
+              <path className="mb" style={r("back_upper")} d="M48 52 Q60 48 72 52 Q70 62 65 74 Q60 70 55 74 Q50 62 48 52 Z"/>
+              <path className="mb" style={r("back_upper")} d="M48 74 Q60 70 72 74 L71 100 Q60 104 49 100 Z"/>
+              {/* Latissimus dorsi */}
+              <path className="mb" style={r("lats")} d="M48 84 Q36 104 40 128 Q48 132 52 126 L52 88 Q50 84 48 84 Z"/>
+              <path className="mb" style={r("lats")} d="M72 84 Q84 104 80 128 Q72 132 68 126 L68 88 Q70 84 72 84 Z"/>
+              {/* Lower back / erector spinae */}
+              <path className="mb" style={r("back_lower")} d="M49 102 L71 102 Q73 122 67 140 Q60 144 53 140 Q47 122 49 102 Z"/>
+              {/* Triceps */}
+              <path className="mb" style={r("triceps_l")} d="M31 80 Q25 96 28 114 Q34 118 40 114 Q42 96 38 80 Q35 78 31 80 Z"/>
+              <path className="mb" style={r("triceps_r")} d="M89 80 Q95 96 92 114 Q86 118 80 114 Q78 96 82 80 Q85 78 89 80 Z"/>
+              {/* Glutes */}
+              <path className="mb" style={r("glutes_l")} d="M45 150 Q36 160 39 174 Q47 182 58 177 Q60 162 55 150 Q50 148 45 150 Z"/>
+              <path className="mb" style={r("glutes_r")} d="M75 150 Q84 160 81 174 Q73 182 62 177 Q60 162 65 150 Q70 148 75 150 Z"/>
+              {/* Hamstrings */}
+              <path className="mb" style={r("hamstrings_l")} d="M44 178 Q35 208 39 238 Q46 244 54 238 Q58 208 56 178 Q50 182 44 178 Z"/>
+              <path className="mb" style={r("hamstrings_r")} d="M76 178 Q85 208 81 238 Q74 244 66 238 Q62 208 64 178 Q70 182 76 178 Z"/>
+              {/* Gastrocnemius (calves) */}
+              <path className="mb" style={r("calves_l")} d="M41 240 Q37 262 41 283 Q47 287 51 283 Q53 262 51 240 Q46 244 41 240 Z"/>
+              <path className="mb" style={r("calves_r")} d="M79 240 Q83 262 79 283 Q73 287 69 283 Q67 262 69 240 Q74 244 79 240 Z"/>
+              {/* Definition lines */}
+              <path className="bl" d="M60 100 L60 142"/>
+              <path className="bl" d="M46 246 L46 280"/>
+              <path className="bl" d="M74 246 L74 280"/>
             </>}
-            <path d="M36 44 L22 100 L36 100 L36 44" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.5"/>
-            <path d="M74 44 L88 100 L74 100 L74 44" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.5"/>
-            <rect x="36" y="100" width="38" height="12" rx="4" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
-            <path d="M14 82 Q10 96 12 110 Q18 112 24 110 Q26 96 26 82 Z" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
-            <path d="M96 82 Q100 96 98 110 Q92 112 86 110 Q84 96 84 82 Z" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
-            <ellipse cx="40" cy={side==="front"?172:182} rx="8" ry="6" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
-            <ellipse cx="70" cy={side==="front"?172:182} rx="8" ry="6" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
-            <ellipse cx="38" cy={side==="front"?228:232} rx="9" ry="5" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
-            <ellipse cx="72" cy={side==="front"?228:232} rx="9" ry="5" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
+
+            {/* ── Head + hair (feminine, no bow) ── */}
+            {side === "front" && (
+              <path d="M45 30 Q44 9 60 7 Q76 9 75 30 Q79 52 70 60 Q67 40 60 38 Q53 40 50 60 Q41 52 45 30 Z" fill="var(--hair)"/>
+            )}
+            <ellipse cx="60" cy="30" rx="13" ry="16" fill="var(--skin)" stroke="var(--body-line)" strokeWidth="0.8"/>
+            {side === "back" && (
+              <path d="M45 28 Q44 7 60 5 Q76 7 75 28 Q81 56 73 66 L47 66 Q39 56 45 28 Z" fill="var(--hair)" stroke="var(--body-line)" strokeWidth="0.6"/>
+            )}
           </svg>
         </div>
       ))}
@@ -442,9 +478,10 @@ function LogForm({ onSave, onCancel, onSaveTemplate }) {
 
   return (
     <div style={{
-      background: "#fff0f0",
-      border: "0.5px solid #f5c0c0",
+      background: "var(--color-background-primary)",
+      border: "2.5px solid var(--color-accent)",
       borderRadius: "var(--border-radius-lg)",
+      boxShadow: "0 5px 0 var(--color-accent-strong), 0 10px 18px rgba(255,45,134,0.25)",
       padding: "1.25rem",
     }}>
       <p style={{ fontWeight: 500, fontSize: 15, margin: "0 0 1rem" }}>Log workout</p>
@@ -517,7 +554,7 @@ function LogForm({ onSave, onCancel, onSaveTemplate }) {
       </div>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={handleSave} disabled={!canSave} style={{ flex: 1, fontWeight: 500, opacity: canSave ? 1 : 0.4 }}>Save workout</button>
+        <button onClick={handleSave} disabled={!canSave} className="btn-primary" style={{ flex: 1, opacity: canSave ? 1 : 0.4 }}>Save workout</button>
         <button onClick={onCancel} style={{ flex: 1 }}>Cancel</button>
       </div>
     </div>
@@ -660,7 +697,7 @@ function StatsStrip({ workouts }) {
         { label: "Exercises", value: exercises || "—" },
         { label: "Muscle groups", value: groups || "—" },
       ].map(s => (
-        <div key={s.label} style={{ background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", padding: "10px 12px", textAlign: "center" }}>
+        <div key={s.label} style={{ background: "var(--color-background-primary)", border: "2px solid var(--color-border-secondary)", boxShadow: "0 3px 0 rgba(91,62,199,0.18)", borderRadius: "var(--border-radius-md)", padding: "10px 12px", textAlign: "center" }}>
           <p style={{ fontSize: 20, fontWeight: 500, margin: "0 0 2px" }}>{s.value}</p>
           <p style={{ fontSize: 11, color: "var(--color-text-tertiary)", margin: 0 }}>{s.label}</p>
         </div>
@@ -698,7 +735,7 @@ function CoverageBar({ workouts }) {
 function QuickAdd({ templates, onQuickAdd, onDelete }) {
   if (!templates.length) return null;
   return (
-    <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "1rem 1.25rem" }}>
+    <div style={{ background: "var(--color-background-primary)", border: "2.5px solid var(--color-panel-border)", borderRadius: "var(--border-radius-lg)", boxShadow: "var(--panel-shadow)", padding: "1rem 1.25rem" }}>
       <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-tertiary)", margin: "0 0 12px", letterSpacing: 0.5, textTransform: "uppercase" }}>Quick add</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {templates.map(t => {
@@ -784,7 +821,7 @@ function ExerciseFinder() {
   const color = result ? (TYPE_COLORS[result.category] || "#888") : "#888";
 
   return (
-    <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "1.25rem" }}>
+    <div style={{ background: "var(--color-background-primary)", border: "2.5px solid var(--color-panel-border)", borderRadius: "var(--border-radius-lg)", boxShadow: "var(--panel-shadow)", padding: "1.25rem" }}>
       <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-tertiary)", margin: "0 0 4px", letterSpacing: 0.5, textTransform: "uppercase" }}>Find an exercise</p>
       <p style={{ fontSize: 13, color: "var(--color-text-secondary)", margin: "0 0 12px" }}>
         Don't know what it's called? Describe the movement and AI will identify it.
@@ -801,7 +838,7 @@ function ExerciseFinder() {
             style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 13, color: "var(--color-text-primary)" }}
           />
         </div>
-        <button onClick={identify} disabled={!query.trim() || loading} style={{ fontWeight: 500, opacity: !query.trim() || loading ? 0.4 : 1 }}>
+        <button onClick={identify} disabled={!query.trim() || loading} className="btn-primary" style={{ opacity: !query.trim() || loading ? 0.4 : 1 }}>
           {loading ? "Identifying…" : "Identify"}
         </button>
       </div>
@@ -911,33 +948,28 @@ export default function FitTrack() {
       "--body-line": "var(--color-border-secondary)",
       "--muscle-rest": "var(--color-background-secondary)",
       "--muscle-stroke": "var(--color-border-secondary)",
+      "--hair": "#7a5b52",
+      "--bow": "var(--color-accent)",
       fontFamily: "var(--font-sans)", maxWidth: 680, margin: "0 auto", padding: "1rem 0"
     }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>FitTrack</h1>
-          <p style={{ fontSize: 13, color: "var(--color-text-tertiary)", margin: "2px 0 0" }}>
-            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-          </p>
-        </div>
-        <button onClick={() => { setShowForm(true); setTab("dashboard"); }} style={{ fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
-          <i className="ti ti-plus" aria-hidden="true"/> Log workout
-        </button>
+      <div style={{ marginBottom: "1.25rem" }}>
+        <h1 style={{ fontSize: 30, fontWeight: 800, margin: 0, color: "var(--color-accent)", textShadow: "0 2px 0 var(--color-accent-strong)", letterSpacing: 0.5 }}>FitTrack</h1>
+        <p style={{ fontSize: 13, color: "var(--color-text-tertiary)", margin: "2px 0 0" }}>
+          {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+        </p>
       </div>
 
       {showForm && <div style={{ marginBottom: "1.25rem" }}><LogForm onSave={handleSave} onCancel={() => setShowForm(false)} onSaveTemplate={handleSaveTemplate}/></div>}
 
-      {/* Tabs */}
-      <div style={{ display: "flex", marginBottom: "1rem", borderBottom: "0.5px solid var(--color-border-tertiary)" }}>
+      {/* Tabs — chunky pill selector */}
+      <div style={{ display: "flex", gap: 8, marginBottom: "1.25rem" }}>
         {[["dashboard","Dashboard"],["find","Find"],["history","History"]].map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id)} style={{
-            background: "none", border: "none",
-            borderBottom: tab === id ? "2px solid var(--color-text-primary)" : "2px solid transparent",
-            borderRadius: 0, padding: "8px 16px", fontSize: 14, cursor: "pointer", marginBottom: -1,
-            color: tab === id ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
-            fontWeight: tab === id ? 500 : 400,
-          }}>{label}</button>
+          <button key={id} onClick={() => setTab(id)}
+            className={tab === id ? "btn-primary" : ""}
+            style={{ fontSize: 14, padding: "8px 18px" }}>
+            {label}
+          </button>
         ))}
       </div>
 
@@ -946,7 +978,7 @@ export default function FitTrack() {
           <QuickAdd templates={templates} onQuickAdd={handleQuickAdd} onDelete={handleDeleteTemplate}/>
 
           {/* Heatmap */}
-          <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "1rem 1.25rem" }}>
+          <div style={{ background: "var(--color-background-primary)", border: "2.5px solid var(--color-panel-border)", borderRadius: "var(--border-radius-lg)", boxShadow: "var(--panel-shadow)", padding: "1rem 1.25rem" }}>
             <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-tertiary)", margin: "0 0 12px", letterSpacing: 0.5, textTransform: "uppercase" }}>Muscle activation · last 7 days</p>
             <BodySVG heat={heat}/>
             <HeatLegend/>
@@ -955,7 +987,7 @@ export default function FitTrack() {
           <StatsStrip workouts={workouts}/>
 
           {/* Chart + coverage */}
-          <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "1rem 1.25rem" }}>
+          <div style={{ background: "var(--color-background-primary)", border: "2.5px solid var(--color-panel-border)", borderRadius: "var(--border-radius-lg)", boxShadow: "var(--panel-shadow)", padding: "1rem 1.25rem" }}>
             <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-tertiary)", margin: "0 0 12px", letterSpacing: 0.5, textTransform: "uppercase" }}>Activity · last 7 days</p>
             <WeeklyChart workouts={workouts}/>
             <div style={{ borderTop: "0.5px solid var(--color-border-tertiary)", paddingTop: 14, marginTop: 14 }}>
@@ -965,7 +997,7 @@ export default function FitTrack() {
 
           {/* Recent */}
           {sorted.length > 0 && (
-            <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", overflow: "hidden" }}>
+            <div style={{ background: "var(--color-background-primary)", border: "2.5px solid var(--color-panel-border)", borderRadius: "var(--border-radius-lg)", boxShadow: "var(--panel-shadow)", overflow: "hidden" }}>
               <p style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-tertiary)", margin: 0, padding: "12px 14px 10px", letterSpacing: 0.5, textTransform: "uppercase", borderBottom: "0.5px solid var(--color-border-tertiary)" }}>Recent</p>
               {sorted.slice(0, 5).map(w => <WorkoutCard key={w.id} w={w} onDelete={handleDelete} onSaveTemplate={handleSaveTemplate}/>)}
               {sorted.length > 5 && (
@@ -988,12 +1020,30 @@ export default function FitTrack() {
       {tab === "find" && <ExerciseFinder/>}
 
       {tab === "history" && (
-        <div style={{ background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", overflow: "hidden" }}>
+        <div style={{ background: "var(--color-background-primary)", border: "2.5px solid var(--color-panel-border)", borderRadius: "var(--border-radius-lg)", boxShadow: "var(--panel-shadow)", overflow: "hidden" }}>
           {sorted.length === 0
             ? <p style={{ textAlign: "center", padding: "2rem", color: "var(--color-text-tertiary)", fontSize: 14 }}>No workouts logged yet.</p>
             : sorted.map(w => <WorkoutCard key={w.id} w={w} onDelete={handleDelete} onSaveTemplate={handleSaveTemplate}/>)
           }
         </div>
+      )}
+
+      {/* Floating "Log workout" bubble */}
+      {!showForm && (
+        <button
+          onClick={() => { setShowForm(true); setTab("dashboard"); }}
+          aria-label="Log workout"
+          title="Log workout"
+          className="btn-primary"
+          style={{
+            position: "fixed", right: 22, bottom: 22, zIndex: 50,
+            width: 62, height: 62, borderRadius: 999, padding: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 28,
+          }}
+        >
+          <i className="ti ti-plus" aria-hidden="true"/>
+        </button>
       )}
     </div>
   );
